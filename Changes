@@ -1,5 +1,8 @@
 Revision history for Perl extension WWW::Twilio::TwiML.
 
+1.03  Thu Sep 29 08:48:08 MDT 2011
+  - documentation fixes only (no code changes)
+
 1.02  Wed Sep 28 23:34:42 MDT 2011
   - README fixes only (no code changes)
 

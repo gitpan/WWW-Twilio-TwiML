@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Carp 'croak';
 
-our $VERSION = '1.02';
+our $VERSION = '1.03';
 our $AUTOLOAD;
 our $NL = "\n";
 our $STRICT = 0;
@@ -403,8 +403,8 @@ documents. We could add another object to the chain:
     ->Dial("+17175558309");
 
 The B<parent> method returns the I<Say> object's parent (I<Response>
-object), and we chain a I<Dial> object attached from it. The resulting
-I<$tw> object returns:
+object), and we chain a I<Dial> object from it. The resulting I<$tw>
+object returns:
 
   <?xml version="1.0" encoding="UTF-8" ?>
   <Response>
@@ -438,7 +438,7 @@ Sets the content of an element. A TwiML object's content can be
 I<either> a string or a listref of objects, but not both. If the
 argument is another B<WWW::Twilio::TwiML> object, the content of the
 element (if any) will be replaced with the object. Any other argument
-will be considered content data (string).
+will be considered string content.
 
   my $say = new WWW::Twilio::TwiML(name => 'Say');
   $say->content("Eat at Joe's!");  ## a string as content
@@ -447,7 +447,7 @@ becomes:
 
   <Say>Eat at Joe&apos;s!</Say>
 
-Now we can add I<$elem> to another element:
+Now we can add I<$say> to another element:
 
   my $parent = new WWW::Twilio::TwiML(name => 'Response');
   $parent->content($say);  ## an object as content
@@ -506,7 +506,7 @@ becomes:
 =head2 attributes({ key => value })
 
 Sets attributes for an element. If a hash reference is not supplied, a
-hashref of the existing attributes are returned.
+hashref of the existing attributes is returned.
 
   my $elem = new WWW::Twilio::TwiML(name => 'Say');
   $elem->attributes({voice => 'woman'});
@@ -538,10 +538,13 @@ prints:
 B<root> is a convenient way to get a handle to the root TwiML object
 when you're ready to print.
 
-=head2 to_string
+=head2 to_string( { header => value } )
 
 Returns the object as a string. Unnamed (root) elements will include
-the XML declaration entity.
+the XML declaration entity. If a hashref is supplied, those will be
+emitted as RFC 822 headers followed by a blank line.
+
+Example:
 
   print WWW::Twilio::TwiML->new->to_string;
 
@@ -563,14 +566,22 @@ prints:
     <Say>plugh</Say>
   </Response>
 
-If we forget the call to B<root> in the previous example, we get:
+If we forget the call to B<root> in the previous example, like this:
+
+  print WWW::Twilio::TwiML->new
+    ->Response
+    ->Say("plugh")
+    ->to_string;
+
+we get:
 
   <Say>plugh</Say>
 
-(remember that B<(any TwiML verb)> methods are constructors and return
-a reference to the new object).
+because B<to_string> is being applied to the object created by B<Say>,
+not B<$tw>.
 
-You can add RFC822 headers to your documents at B<to_string> time:
+By specifying a hashref, you can add RFC 822 headers to your
+documents:
 
   $tw = new WWW::Twilio::TwiML;
   $tw->Response->Say('Arf!');
@@ -611,13 +622,13 @@ becomes:
     <Say>We didn't receive any input. Goodbye!</Say>
   </Response>
 
-A note on readability: the author recommends indenting multi-line
+I<A note on readability>: the author recommends indenting multi-line
 chains to show the parent-child relationship. Each time B<parent> is
 invoked, the next line should be outdented, as illustrated above.
 
 =head1 PACKAGE VARIABLES
 
-You may control the behavior or B<WWW::Twilio::TwiML> in several ways
+You may control the behavior of B<WWW::Twilio::TwiML> in several ways
 by setting package variables described in this section.
 
 =head2 Newlines
@@ -625,7 +636,7 @@ by setting package variables described in this section.
 You may change the default newline from "\n" to anything else by
 setting the I<$NL> package variable:
 
-  $WWW::Twilio::TwiML::NL = "\r\n";
+  local $WWW::Twilio::TwiML::NL = "\r\n";
 
 =head2 Strict mode
 
@@ -640,14 +651,14 @@ your TwiML will be incorrect:
 B<Saay> is not a valid Twilio TwiML tag and you will not know it until
 Twilio's TwiML parser attempts to handle your TwiML document.
 
-If you want strict checks on the TwiML elements, you may enable strict
-mode by setting two package variables:
+You may enable strict checks on the TwiML elements at runtime by
+setting two package variables:
 
 =over 4
 
 =item $STRICT
 
-When true, B<WWW::Twilio::TwiML>'s autoloader will lookup the
+When true, B<WWW::Twilio::TwiML>'s autoloader will look up the
 unhandled method call in the B<%TAGS> package variable (below). If the
 method name is not in that hash, the autoloader will die with an
 "Undefined subroutine" error.
@@ -719,7 +730,7 @@ and consequently each example would be printed with:
 
   print $tw->to_string;
 
-See the file F<t/twilio.t> distributed with this package for
+See the F<t/twilio.t> test file distributed with this package for
 additional context for these examples.
 
 =over 4
@@ -815,7 +826,8 @@ future revisions of Twilio's TwiML language. This is because method
 calls are constructors which generate TwiML objects on the fly.
 
 For example, say Twilio began to support a B<Belch> verb (if only!),
-we could want to take advantage of it immediately like this:
+we could take advantage of it immediately by simply calling a B<Belch>
+method like this:
 
   my $tw = new WWW::Twilio::TwiML;
   $tw->Response->Belch('Braaaaaap!');
