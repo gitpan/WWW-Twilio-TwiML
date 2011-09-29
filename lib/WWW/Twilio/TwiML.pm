@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Carp 'croak';
 
-our $VERSION = '1.01';
+our $VERSION = '1.02';
 our $AUTOLOAD;
 our $NL = "\n";
 our $STRICT = 0;
