@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Carp 'croak';
 
-our $VERSION = '1.03';
+our $VERSION = '1.04';
 our $AUTOLOAD;
 our $NL = "\n";
 our $STRICT = 0;
@@ -56,8 +56,9 @@ sub parent {
 
 sub content {
     my $self = shift;
+    my @args = grep { defined $_ } @_;
 
-    if( @_ ) {
+    if( @args ) {
         my $arg = shift;
 
         ## an object
@@ -205,7 +206,7 @@ sub _attr_str {
     my %attr = %{ $self->attributes };
 
     for my $key ( sort keys %attr ) {
-        my $val = $attr{$key};
+        my $val = $attr{$key} || '';
         $str .= ' ';
         $str .= qq!$key="$val"!;
     }
