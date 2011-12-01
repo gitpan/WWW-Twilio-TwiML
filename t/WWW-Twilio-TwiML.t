@@ -1,5 +1,5 @@
 #-*- mode: cperl -*-#
-use Test::More tests => 11;
+use Test::More tests => 13;
 BEGIN { use_ok('WWW::Twilio::TwiML') };
 
 #########################
@@ -146,9 +146,13 @@ Content-type: text/xml
 {
     my @tags = qw(Response Say Play Dial Conference);
 
+    ok( WWW::Twilio::TwiML->can('Barf'), "can method" );
+
     local $WWW::Twilio::TwiML::STRICT = 1;
     local %WWW::Twilio::TwiML::TAGS = ();
     @WWW::Twilio::TwiML::TAGS{@tags} = (1) x @tags;
+
+    ok( ! WWW::Twilio::TwiML->can('Barf'), "can method strict" );
 
     eval { WWW::Twilio::TwiML->new->Response->Barf('chunky') };
     like( $@, qr(^Undefined subroutine Barf), "strict method" );

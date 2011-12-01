@@ -1,4 +1,4 @@
-WWW-Twilio-TwiML version 1.04
+WWW-Twilio-TwiML version 1.05
 =============================
 
 WWW::Twilio::TwiML is a small module for creating Twilio-compatible
@@ -7,6 +7,7 @@ TwiML documents:
   my $tw = new WWW::Twilio::TwiML;
   $tw->Response
     ->Say("Lookin' out my backdoor");
+  print $tw->to_string;
 
 becomes:
 

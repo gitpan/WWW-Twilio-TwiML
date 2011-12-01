@@ -4,8 +4,9 @@ use 5.008001;
 use strict;
 use warnings;
 use Carp 'croak';
+use Scalar::Util 'blessed';
 
-our $VERSION = '1.04';
+our $VERSION = '1.05';
 our $AUTOLOAD;
 our $NL = "\n";
 our $STRICT = 0;
@@ -214,36 +215,60 @@ sub _attr_str {
     return $str;
 }
 
+sub can {
+    my $self = shift;
+    my $method = shift;
+
+    ## NOTE: this probably breaks inheritance
+    if( $STRICT and keys %TAGS ) {
+        unless( exists $TAGS{$method} ) {
+            no strict 'refs';
+            undef *{ $method };
+            return;
+        }
+    }
+
+    my $meth_ref = $self->SUPER::can($method);
+    return $meth_ref if $meth_ref;
+
+    $meth_ref = sub {
+        my $me = shift;
+
+        my $child = new blessed $me;
+        $child->name($method);
+
+        for my $arg ( @_ ) {
+            if( ref($arg) ) {
+                $child->attributes($arg);
+            }
+            else {
+                $child->content($arg);
+            }
+        }
+
+        $me->add_child($child);
+
+        return $child;
+    };
+
+    no strict 'refs';
+    return *{ $method } = $meth_ref;
+}
+
 sub AUTOLOAD {
-    my $self   = shift;
+    my $self = $_[0];
 
     my $method = $AUTOLOAD;
     $method =~ s/^(.*):://;
-    return if $method eq 'DESTROY';
 
-    if( $STRICT and keys %TAGS ) {
-        unless( exists $TAGS{$method} ) {
-            croak "Undefined subroutine $method";
-        }
-    }
+    my $meth_ref = $self->can($method);
+    croak "Undefined subroutine $method\n"
+      unless $meth_ref;
 
-    my $child = new(__PACKAGE__);
-    $child->name($method);
-
-    for my $arg ( @_ ) {
-        if( ref($arg) ) {
-            $child->attributes($arg);
-        }
-        else {
-            $child->content($arg);
-        }
-    }
-
-    $self->add_child($child);
-
-    return $child;
+    goto &$meth_ref;
 }
 
+sub DESTROY { }
 
 ## resp_node = ( name       => 'Response',
 ##               content    => [
